@@ -49,7 +49,7 @@ gg_heatmap <- function(obj, x = "xIndex", y = "giID", fill = "score",
                         scales = "free")
   }
   
-  p <- p + geom_tile(colour = NA) + 
+  p <- p + geom_raster() + 
     theme(axis.text = element_blank(), axis.ticks = element_blank())
   return(p)
   
@@ -94,7 +94,7 @@ plot_by_range_group <- function(object, colourBy=NULL, facetBy=NULL){
   p <- p + facet_wrap(formula(paste("~",paste(facetBy,collapse="+"))))
   return(p)
 }
-
+ 
 
 
 #### 
