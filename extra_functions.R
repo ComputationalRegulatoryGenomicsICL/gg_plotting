@@ -3,6 +3,7 @@ library(GenomicRanges)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
+library(viridis)
 
 winsorise_vec <- function(vec, lower = 0.01, upper = 0.99){
   if (lower < 0 | upper > 1) {
@@ -43,7 +44,7 @@ reshape_chipprofile <- function(object){
 }
 
 gg_heatmap <- function(obj, x = "xIndex", y = "giID", fill = "score", 
-                       facetBy = NULL, facetBy_grid = NULL, winsorise = NULL){
+                       winsorise = NULL){
   
   #winsorise score column
   if(!is.null(winsorise)){
@@ -55,19 +56,6 @@ gg_heatmap <- function(obj, x = "xIndex", y = "giID", fill = "score",
   }
   
   p <- ggplot(obj, aes_string(x = x, y = y, fill = fill))
-  
-  if (!is.null(facetBy)){
-    p <- p + facet_wrap(formula(paste("~",paste(facetBy,collapse="+"))),
-                        scales = "free")
-  }
-  
-  if (!is.null(facetBy_grid)){
-    if (length(facetBy_grid) != 2){
-      stop("Must supply two variables for facet_grid")
-    }
-    p <- p + facet_grid(formula(paste(facetBy_grid[[1]], "~", facetBy_grid[[2]])),
-                        scales = "free")
-  }
   
   p <- p + geom_raster() + 
     theme(axis.text = element_blank(), axis.ticks = element_blank())
@@ -119,9 +107,28 @@ plot_by_range_group <- function(object, colourBy=NULL, facetBy=NULL){
 
 #### 
 # test <- all_se_signal_list[[5]]
+# test <- object
 # test_r <- reshape_chipprofile(test)
 # gg_heatmap(test_r, winsorise = c(0, 0.99), facet = "class")
 # gg_heatmap(test_r, winsorise = c(0, 0.99), facetBy_grid = c("class", "assay")) + 
 #   scale_fill_viridis(option = "magma") 
-
-# object <- c(CTCF_signal[[1]], CTCF_signal[[2]])
+# 
+# test2 <- c(object, object)
+# metadata(test2)$names[2] <- "assay2"
+# test2<- reshape_chipprofile(test2)
+# 
+# gg_heatmap(test2, winsorise = c(0, 0.99), facetBy_grid = c("assay", "class")) + 
+#     scale_fill_viridis(option = "magma")
+# gg_heatmap(test2, winsorise = c(0, 0.99), facetBy_grid = c("class", "assay")) + 
+#     scale_fill_viridis(option = "magma")
+# 
+# gg_heatmap(test2, winsorise = c(0, 0.99)) + 
+#   scale_fill_viridis(option = "magma")
+# 
+# gg_heatmap(test2, winsorise = c(0, 0.99)) + 
+#   #scale_fill_viridis(option = "magma")+
+#   facet_wrap(class ~ assay, scales = "free", nrow = 4) +
+#   scale_x_discrete("Position", breaks = c("Start.1.1", "End.1"),
+#                    labels = c("Start.1.1" = "Start", "End.1" = "End"))
+#   
+#   
