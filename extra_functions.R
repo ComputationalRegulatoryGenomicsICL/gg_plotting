@@ -49,7 +49,7 @@ gg_heatmap <- function(obj, x = "xIndex", y = "giID", fill = "score",
                         scales = "free")
   }
   
-  p <- p + geom_tile(colour = NA) + scale_fill_viridis(option = "magma") +
+  p <- p + geom_tile(colour = NA) + 
     theme(axis.text = element_blank(), axis.ticks = element_blank())
   return(p)
   
@@ -98,22 +98,8 @@ plot_by_range_group <- function(object, colourBy=NULL, facetBy=NULL){
 
 
 #### 
-test <- all_se_signal_list[[5]]
-test_r <- reshape_chipprofile(test)
-gg_heatmap(test_r, winsorise = c(0, 0.99), facet = "class")
-
-# obj_reshape <- as.data.frame(cbind(mcols(rowRanges(object)), 
-#                                    as.data.frame(assays(object)[[1]])))
-# 
-# #get columns with data at each position - reshape these to long format
-# g_cols <- names(obj_reshape)[!(names(obj_reshape) %in% names(mcols(rowRanges(object))))]
-# obj_reshape <- gather_(obj_reshape, "xIndex", "score", g_cols)
-# 
-# obj_reshape_win <- obj_reshape
-# 
-# obj_reshape_win$score <- winsorise_vec(obj_reshape_win$score, 0.01, 0.99)
-# 
-# ggplot(obj_reshape_win, aes(x = xIndex, y = giID, fill = score)) + 
-#   geom_tile(colour = NA) + facet_wrap(~class, scales = "free") + 
-#   theme(axis.text = element_blank(), axis.ticks = element_blank()) + 
-#   scale_fill_viridis(option = "magma")
+# test <- all_se_signal_list[[5]]
+# test_r <- reshape_chipprofile(test)
+# gg_heatmap(test_r, winsorise = c(0, 0.99), facet = "class")
+# gg_heatmap(test_r, winsorise = c(0, 0.99), facet = "class") + 
+#   scale_fill_viridis(option = "magma") 
