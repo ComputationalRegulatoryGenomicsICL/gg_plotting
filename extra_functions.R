@@ -5,6 +5,21 @@ library(dplyr)
 library(ggplot2)
 library(viridis)
 
+#' Cut off data at upper and lower quantiles
+#' 
+#' Replaces all data points beyond a quantile with the value at that quantile, 
+#' see: https://en.wikipedia.org/wiki/Winsorising. 
+#' Use for removing outliers before plotting data. This function works on vectors 
+#' or matrices as it's based on subsetting with `[]`. 
+#' 
+#' @param vec Vector or matrix to apply winsorisation to.
+#' @param lower Lower quantile for winsorisation. Numeric fractional quantile,
+#' should be between zero and 1. 
+#' @param upper Upper quantile for winsorisation. Numeric fractional quantile,
+#' should be between zero and 1. 
+#' 
+#' @value Winsorised vector or matrix.
+
 winsorise_vec <- function(vec, lower = 0.01, upper = 0.99){
   if (lower < 0 | upper > 1) {
     stop("Lower and upper bounds for winsorisation must be between 0 and 1")
@@ -18,6 +33,17 @@ winsorise_vec <- function(vec, lower = 0.01, upper = 0.99){
   vec[vec > q_u] <- q_u
   return(vec)
 }
+
+#' Reshape a ChIPprofile object into a data.frame
+#' 
+#' This function takes a soGGi ChIPprofile object and reshapes it into a 
+#' long-format data.frame. Metadata columns from the rowRanges are added to each
+#' assay before assays are combined into a single data.frame with an "assay" 
+#' column that uses the names of the assays to identify the data. 
+#' 
+#' @param object A ChIPprofile object
+#' 
+#' @value a long-format tbl_df of the genomic data.
 
 reshape_chipprofile <- function(object){
   require(dplyr)
@@ -43,6 +69,22 @@ reshape_chipprofile <- function(object){
   return(tbl_df(obj_reshape))
 }
 
+#' Function to plot a heatmap from a data.frame of genomic data
+#' 
+#' This function takes a long-format data.frame containing data extracted from a
+#' ChIPprofile object and plots it as a heatmap using geom_raster.
+#' 
+#' @param obj A data.frame or tbl_df of long-form genomic data.
+#' @param x Column name to use for x position, default "xIndex"
+#' @param y Column name to use for y position, default "giID"
+#' @param fill Column name to use for fill of heatmap, default "score
+#' @param winsorise Vector of lower and upper bounds for winsorisation using 
+#' winsorise_vec, should be numeric values between zero and one. Default = NULL 
+#' for no winsorisation.
+#' 
+#' @value a gpplot plot object
+
+
 gg_heatmap <- function(obj, x = "xIndex", y = "giID", fill = "score", 
                        winsorise = NULL){
   
@@ -62,6 +104,24 @@ gg_heatmap <- function(obj, x = "xIndex", y = "giID", fill = "score",
   return(p)
   
 }
+
+#' Summarises genomic signal in a data.frame
+#' 
+#' This function takes a long form data frame of genomic signal and summarises 
+#' it by position and by any additional columns you specify.
+#' 
+#' @param obj_reshape Long-form data.frame of genomic data
+#' @param summariseBy Column names to summarise by. Default NULL to only summarise 
+#' by position (column "xIndex").
+#' @param summary String specifying function to summarise data, e.g. mean, median, 
+#' sum. Default "mean". 
+#' @param range Method to use to summarise the range of the data. Default NULL. 
+#' Currently only quantile ranges are implemented, e.g. to return the upper and 
+#' lower quartiles of the data use `c(0.25, 0.75)`. Any percentiles can be used, 
+#' e.g. `c(0.01, 0.05, 0.95, 0.99)`. 
+#' TO DO: implement confidence intervals, sd, etc...
+#' 
+#' @value a data.frame of summarised data
 
 summarise_signal <- function(obj_reshape, summariseBy = NULL, summary = "mean",
                              range = NULL){
