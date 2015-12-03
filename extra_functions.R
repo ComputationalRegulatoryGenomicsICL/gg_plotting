@@ -3,7 +3,7 @@ library(GenomicRanges)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
-library(viridis)
+#library(viridis) # colourblind safe colour palettes, not strictly necessary
 
 #' Cut off data at upper and lower quantiles
 #' 
