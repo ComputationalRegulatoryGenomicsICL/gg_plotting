@@ -63,72 +63,35 @@ gg_heatmap <- function(obj, x = "xIndex", y = "giID", fill = "score",
   
 }
 
-plot_by_range_group <- function(object, colourBy=NULL, facetBy=NULL){
-  require(tidyr)
-  require(dplyr)
-  obj_reshape <- as.data.frame(cbind(mcols(rowRanges(object)), 
-                                     as.data.frame(assays(object)[[1]])))
+summarise_signal <- function(obj_reshape, summariseBy = NULL, summary = "mean",
+                             range = NULL){
+  #get summary function e.g. mean, median, sum
+  #any checks needed here?
+  summary_func <- lazyeval::interp(~f(score), f = as.name(summary))
   
-  #get columns with data at each position - reshape these to long format
-  g_cols <- names(obj_reshape)[!(names(obj_reshape) %in% names(mcols(rowRanges(object))))]
-  obj_reshape <- gather_(obj_reshape, "xIndex", "score", g_cols)
+  ## ranges
+  quantile_list <- NULL
+  if (is.numeric(range) & all(range >= 0 & range <= 1)){
+    #and length==2?
+    message("Treating 'range' argument as if specifying quantiles of data to return...")
+    quantile_list <- lapply(range, function(q){
+      lazyeval::lazy(quantile(score, probs = q))
+    })
+    names(quantile_list) <- paste0("q_", range)
+  }
   
-  #group and calculate mean per position per group of ranges
-  grouping <- list(colourBy, facetBy)
-  grouping <- grouping[sapply(grouping, length) > 0]
+  args_list <- c(score_summary = summary_func, quantile_list)
   
-  obj_reshape <- obj_reshape %>% 
-    group_by_(.dots = c(grouping, "xIndex")) %>% 
-    summarise(mean_score = mean(score)) 
+  #group by position and any other metadata
+  grouping <- c(summariseBy, "xIndex")
+  obj_reshape <- group_by_(obj_reshape, .dots = grouping)
   
-  #get obj_reshape axis index numbers and join
-  axisIndex <- c(seq(1,(object@params$distanceAround+object@params$distanceAround+1)))
-  axisIndex_df <- data.frame(xIndex = unique(obj_reshape$xIndex), axisIndex = axisIndex)
-  obj_reshape <- left_join(obj_reshape, axisIndex_df)
-  
-  #plot
-  
-  p <- ggplot(obj_reshape, aes_string(x="axisIndex",y="mean_score"))+
-    geom_line(alpha = 1, size = 1)+
-    xlim(0, 3001) +
-    ylab("Score") +
-    theme(axis.title.y=element_text(angle=0))
-  
-  p <- p + scale_x_continuous(breaks = c(1, object@params$distanceAround+1, object@params$distanceAround+1+object@params$distanceAround),
-                              labels = c(paste0("-",object@params$distanceAround), "Centre", paste0("+", object@params$distanceAround))) +
-    theme(axis.text.x  = element_text(angle=45, vjust=0.5, size=12))
-  
-  p <- p + aes_string(colour = colourBy) 
-  p <- p + facet_wrap(formula(paste("~",paste(facetBy,collapse="+"))))
-  return(p)
+  #summarise
+  obj_summary <- summarise_(obj_reshape, 
+                            .dots = args_list)
+  #rename columns
+  obj_summary <- rename_(obj_summary,
+                         .dots = setNames("score_summary", paste(summary, "score", sep = "_")))
+  return(obj_summary)
 }
- 
 
-
-#### 
-# test <- all_se_signal_list[[5]]
-# test <- object
-# test_r <- reshape_chipprofile(test)
-# gg_heatmap(test_r, winsorise = c(0, 0.99), facet = "class")
-# gg_heatmap(test_r, winsorise = c(0, 0.99), facetBy_grid = c("class", "assay")) + 
-#   scale_fill_viridis(option = "magma") 
-# 
-# test2 <- c(object, object)
-# metadata(test2)$names[2] <- "assay2"
-# test2<- reshape_chipprofile(test2)
-# 
-# gg_heatmap(test2, winsorise = c(0, 0.99), facetBy_grid = c("assay", "class")) + 
-#     scale_fill_viridis(option = "magma")
-# gg_heatmap(test2, winsorise = c(0, 0.99), facetBy_grid = c("class", "assay")) + 
-#     scale_fill_viridis(option = "magma")
-# 
-# gg_heatmap(test2, winsorise = c(0, 0.99)) + 
-#   scale_fill_viridis(option = "magma")
-# 
-# gg_heatmap(test2, winsorise = c(0, 0.99)) + 
-#   #scale_fill_viridis(option = "magma")+
-#   facet_wrap(class ~ assay, scales = "free", nrow = 4) +
-#   scale_x_discrete("Position", breaks = c("Start.1.1", "End.1"),
-#                    labels = c("Start.1.1" = "Start", "End.1" = "End"))
-#   
-#   
